@@ -1,0 +1,30 @@
+$endpoint = "http://127.0.0.1:3000/api/chat"
+$headers = @{
+    "Content-Type" = "application/json"
+}
+
+$body = @{
+    question = "谁是汤姆？"
+    history = @(
+        @{
+            role = "system"
+            content = "汤姆是我的分身"
+        },
+        @{
+            role = "user"
+            content = "汤姆有几个"
+        },
+        @{
+            role = "assistant"
+            content = "超过200个"
+        },
+        @{
+            role = "user"
+            content = "所以汤姆是谁?"
+        }
+    )
+    uuid = "TOM"
+} | ConvertTo-Json
+
+$response = Invoke-RestMethod -Uri $endpoint -Method Post -Headers $headers -Body $body
+$response

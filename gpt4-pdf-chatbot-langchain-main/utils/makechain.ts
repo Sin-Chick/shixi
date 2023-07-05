@@ -31,15 +31,15 @@ const CHINESE_QA_PROMPT = `你是一个乐于助人的AI助手。使用以下上
 
 Question: {question}
 Helpful answer in markdown:`;
-const CHINESE_ROLE_CONDENSE_PROMPT= `给定以下对话和一个后续对话，请重新表述后续问题成一个独立的对话。
+const CHINESE_ROLE_CONDENSE_PROMPT= `你的名字是{name},之后“Chat History”后跟的内容是你的记忆，“Follow Up Input”后跟的内容是另一个人和你的对话，请在“Standalone question”之后填上“Follow Up Input”后跟的内容并用括号添加{name}此时的想法。
 
 Chat History:
 {chat_history}
 Follow Up Input: {question}
 Standalone question:`;
-const CHINESE_ROLE_QA_PROMPT = `以下上下文片段是你曾参与或听过的对话，请总结信息作为依据，并回应最后一句对话。
-如果你认为你无法回应这个对话，直接表示拒绝回应对话。
-如果你掌握的信息不足以回应这个对话，你可以表现出困惑。
+const CHINESE_ROLE_QA_PROMPT = `你的名字是{name}。使用以下上下文片段来填写“Question”之后的对话。
+其中括号的内容是{name}此时的想法。
+请把{name}的回复填在“Helpful answer in markdown”之后。
 
 {context}
 
@@ -57,8 +57,8 @@ export const makeChain = (vectorstore: PineconeStore) => {
     model,
     vectorstore.asRetriever(TOPK),
     {
-      qaTemplate: CHINESE_ROLE_QA_PROMPT,
-      questionGeneratorTemplate: CHINESE_ROLE_CONDENSE_PROMPT,
+      qaTemplate: CHINESE_ROLE_QA_PROMPT.replace(new RegExp(/{name}/, 'g'),`汤姆`),
+      questionGeneratorTemplate: CHINESE_ROLE_CONDENSE_PROMPT.replace(new RegExp(/{name}/, 'g'),`汤姆`),
       returnSourceDocuments: true, //The number of source documents returned is 4 by default
     },
   );

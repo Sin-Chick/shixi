@@ -173,6 +173,11 @@ export class PiDatabase
             throw new Error('Failed to delete your namespace: "'+ role+'"');// 抛出异常，提示获取数据失败
         }
     };
+    static ReSet(role:string,record:Array<PiRecord>)
+    {
+        PiDatabase.DeleteNameSpace(role);
+        PiDatabase.BatchCreat(role,record);
+    };
 }
 async function DocumentCreat(record:PiRecord):Promise<Document[]>
 {
