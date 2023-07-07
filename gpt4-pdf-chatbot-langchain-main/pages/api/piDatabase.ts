@@ -21,7 +21,7 @@ import { timeLog } from 'console';
 export class PiDatabase
 {
 
-    static March = async (role:string,key:string="",targetvector:Array<number>=Array<number>(1536).fill(0),limit:number=10000,datas: Array<any>=[]):Promise<Array<any>>=> {
+    static Match = async (role:string,key:string="",targetvector:Array<number>=Array<number>(1536).fill(0),limit:number=10000,datas: Array<any>=[]):Promise<Array<any>>=> {
         //role角色名
         //limit匹配數，上限10000
         //datas用於存返回值的參數，勿填

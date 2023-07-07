@@ -13,6 +13,8 @@ import { Database, Regex } from 'lucide-react';
 import {PiDatabase,PiRecord} from './piDatabase';
 import { randomInt } from 'crypto';
 
+import { roleChain } from './rolechain';
+
 const bucketVolume:number=10
 let bucket:number=0
 let rolePool:Array<string>=[]
@@ -22,7 +24,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const { uuid, question, history } = req.body;
+  const { uuid, question, history, memory } = req.body;
   //聲明pinecone_name_space
   let pinecone_name_space=""
   pinecone_name_space=PINECONE_NAME_SPACE
@@ -38,7 +40,7 @@ export default async function handler(
   //for(let i=0;i<200;i++){red.push(new PiRecord("湯姆"+i,"我是第"+i+"個汤姆，"+talk[randomInt(0,5)]))}
   //PiDatabase.BatchCreat("TOM",red);
   //PiDatabase.ReSet("Jarry",red);
-  //PiDatabase.March("ERROR","role").then((name)=>{console.log("ans:\n",name)}).catch((error)=>{console.log(error)});
+  //PiDatabase.Match("ERROR","role").then((name)=>{console.log("ans:\n",name)}).catch((error)=>{console.log(error)});
   //getPdfName(pinecone_name_space).then((name)=>{console.log(name)}).catch((error)=>{console.log(error)});
   ////////////////////////////////////////////////////////////////////////////
   //only accept post requests
@@ -65,7 +67,7 @@ export default async function handler(
       },//為替換UUID,插入中間變量
     );
     
-    const chain = makeChain(vectorStore);
+    const chain = roleChain(vectorStore);
     //Ask a question using chat history
     const response = await chain.call({
       question: sanitizedQuestion,
@@ -73,28 +75,47 @@ export default async function handler(
     });
 
     //console.log('history', history);
-    //console.log('response', response);
+    console.log('response', response);
     console.log('chat successed');
-
-    if(rolePool.indexOf(uuid)==-1)rolePool.push(uuid);//如果当前见证者没有存在于角色池，则添加
-    rolePool.forEach((role)=>{PiDatabase.Creat(role,new PiRecord(uuid,response[0].text));})//给见证者添加记忆
-    bucket++;
-    if(bucket>=10)
-    {
-      //这里需要补充记忆压缩函数
-      //贠如龙的函数
-      bucket=0;//清空桶
-      rolePool=[];//清空角色池
-    }
-
-    console.log('remember successed');
+    if(memory)Bucket(vectorStore,uuid,response[0].text);
     res.status(200).json(response);
   } catch (error: any) {
     console.log('error', error);
     res.status(500).json({ error: error.message || 'Something went wrong' });
   }
 }
+export const Bucket = (vectorStore: PineconeStore,uuid:string,record:PiRecord) =>
+{
+  console.log('bucket:',bucket);
+  if(rolePool.indexOf(uuid)==-1)rolePool.push(uuid);//如果当前见证者没有存在于角色池，则添加
+  if(rolePool.length>0)rolePool.forEach((role)=>{PiDatabase.Creat(role,new PiRecord(uuid,record.message));})//给见证者添加记忆
+  bucket++;
+  if(bucket>=10)
+  {
+    let contexts=new Array<PiRecord>();
+    rolePool.forEach((role)=>{
+      let messages:string="";
+      PiDatabase.Match(role,"message").then((name)=>{messages=messages+"\n\n"+name}).catch((error)=>{console.log(error)});
+      
+      const chain=roleChain(vectorStore)
+      let moz="";
+      chain.call({
+        question: "请总结以下对话的主题并以参与者视角描述",
+        chat_history: history || [],
+      }).then((name)=>{moz=name.answer}).catch((error)=>{console.log(error)});
+      contexts.push(new PiRecord(role,moz));
+      PiDatabase.DeleteNameSpace(role);
+    })
+    contexts.forEach((context)=>{
+      PiDatabase.Creat(context.role,context);
+    }
+    )
 
+    bucket=0;//清空桶
+    rolePool=[];//清空角色池
+  }
+  console.log('remember successed');
+}
 
 export const getPdfName = async (uuid:string,datas: Array<string>=[]):Promise<Array<string>>=> {//
   let pinecone_name_space=""// 声明 pinecone_name_space，用于存储命名空间名字
