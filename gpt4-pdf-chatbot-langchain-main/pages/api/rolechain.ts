@@ -45,7 +45,7 @@ const CHINESE_ROLE_QA_PROMPT = `请根据下文提供的对话参与者的记忆
 
 对话: {question}
 合理的回答（使用Markdown格式）:`;
-export const roleChain = (vectorstore: PineconeStore,qaTemplate:string= QA_PROMPT,questionGeneratorTemplate:string= CONDENSE_PROMPT) => {
+export const roleChain = (vectorstore: PineconeStore,qaTemplate:string= CHINESE_QA_PROMPT,questionGeneratorTemplate:string= CHINESE_CONDENSE_PROMPT) => {
     const chain = makeChain(vectorstore,4,0.5,qaTemplate,questionGeneratorTemplate);
     return chain;
 }

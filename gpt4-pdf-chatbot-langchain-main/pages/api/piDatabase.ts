@@ -21,7 +21,7 @@ import { timeLog } from 'console';
 export class PiDatabase
 {
 
-    static Match = async (role:string,key:string="",targetvector:Array<number>=Array<number>(1536).fill(0),limit:number=10000,datas: Array<any>=[]):Promise<Array<any>>=> {
+    static Match = async (role:string,key?:string,targetvector:Array<number>=Array<number>(1536).fill(0),limit:number=10000,datas: Array<any>=[]):Promise<Array<any>>=> {
         //role角色名
         //limit匹配數，上限10000
         //datas用於存返回值的參數，勿填
@@ -57,7 +57,11 @@ export class PiDatabase
                     key in result.metadata&&
                     typeof(result.metadata[key as keyof typeof result.metadata])=='string')
                         datas.push(result.metadata[key as keyof typeof result.metadata]); // 将结果中的 metadata.source 字段的值加入 datas 数组
-                else console.log(key,' is unfound');
+                else 
+                {
+                    console.log(key,' is unfound');
+                    console.log('metadata:',result.metadata);
+                }
             }))
 
         } catch (error) {
@@ -182,7 +186,7 @@ export class PiDatabase
 async function DocumentCreat(record:PiRecord):Promise<Document[]>
 {
     let metadata: Record<string, string>;
-    metadata={ role: record.role }
+    metadata={ role: record.role,message: record.message }
 
     return  [
         new Document({

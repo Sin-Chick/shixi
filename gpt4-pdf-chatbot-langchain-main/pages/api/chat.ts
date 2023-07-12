@@ -33,7 +33,7 @@ export default async function handler(
   console.log('uuid', uuid);
   console.log('question', question);
   ///////////////////////////////////////////////////////////////////////////
-  //PiDatabase.DeleteNameSpace("T");
+  //PiDatabase.DeleteNameSpace("TOM_momery");
   //PiDatabase.Creat("ERROR",new PiRecord("湯姆","這是我說的話"));
   //let red: Array<PiRecord>=[];
   //let talk: Array<string>=["我向往自由，我要谈恋爱！","热带风味的冰红茶挺好喝的","感觉不如原神","我来自香格里拉","我要呼叫舰队","这句话绝对不是谎言"];
@@ -77,42 +77,50 @@ export default async function handler(
     //console.log('history', history);
     console.log('response', response);
     console.log('chat successed');
-    if(memory)Bucket(vectorStore,uuid,response[0].text);
+    Bucket(vectorStore,uuid,response.text);
+    if(memory)Bucket(vectorStore,uuid,response.text);
+    PiDatabase.Match(rolePool[0]+"_momery").then((name)=>{console.log("ans:\n",name)}).catch((error)=>{console.log(error)});
     res.status(200).json(response);
   } catch (error: any) {
     console.log('error', error);
     res.status(500).json({ error: error.message || 'Something went wrong' });
   }
 }
-export const Bucket = (vectorStore: PineconeStore,uuid:string,record:PiRecord) =>
+export const Bucket = (vectorStore: PineconeStore,uuid:string,message:string) =>
 {
   console.log('bucket:',bucket);
   if(rolePool.indexOf(uuid)==-1)rolePool.push(uuid);//如果当前见证者没有存在于角色池，则添加
-  if(rolePool.length>0)rolePool.forEach((role)=>{PiDatabase.Creat(role,new PiRecord(uuid,record.message));})//给见证者添加记忆
+  if(rolePool.length>0)rolePool.forEach((role)=>{PiDatabase.Creat(role+"_momery",new PiRecord(uuid,message));})//给见证者添加记忆
   bucket++;
   if(bucket>=10)
   {
-    let contexts=new Array<PiRecord>();
+    console.log("combin memory")
+    //let contexts=new Array<PiRecord>();
     rolePool.forEach((role)=>{
       let messages:string="";
-      PiDatabase.Match(role,"message").then((name)=>{messages=messages+"\n\n"+name}).catch((error)=>{console.log(error)});
+      PiDatabase.Match(role+"_momery","message").then((name)=>{messages=messages+"\n\n"+name}).catch((error)=>{console.log(error)});
       
       const chain=roleChain(vectorStore)
       let moz="";
       chain.call({
         question: "请总结以下对话的主题并以参与者视角描述",
-        chat_history: history || [],
-      }).then((name)=>{moz=name.answer}).catch((error)=>{console.log(error)});
-      contexts.push(new PiRecord(role,moz));
-      PiDatabase.DeleteNameSpace(role);
+        chat_history: [],
+      }).then((name)=>{
+        console.log("memory:",name.text);moz=name.text;
+        PiDatabase.DeleteNameSpace(role+"_momery").then
+        (()=>
+          {
+            console.log("context:",new PiRecord(role,moz));
+            PiDatabase.Creat(role+"_momery",new PiRecord(role,moz));
+          }
+        )
+        
+      }).catch((error)=>{console.log(error)});
     })
-    contexts.forEach((context)=>{
-      PiDatabase.Creat(context.role,context);
-    }
-    )
 
     bucket=0;//清空桶
     rolePool=[];//清空角色池
+    console.log("combin memory successed")
   }
   console.log('remember successed');
 }
